@@ -7,7 +7,7 @@ const app = http.createServer((req, res) => {
 	fs.createReadStream(`${__dirname}/index.html`).pipe(res);
 });
 
-const io = require('socket.io').listen(app, {path: '/birthday'});
+const io = require('socket.io').listen(app);
 
 const peers = [];
 
