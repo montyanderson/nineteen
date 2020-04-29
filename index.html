@@ -9,7 +9,7 @@
 	<script src="https://unpkg.com/peerjs@1.0.0/dist/peerjs.min.js"></script>
 
 	<script>
-	const socket = io(location.origin);
+	const socket = io(location.origin + location.pathname);
 
 
 	const getId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
