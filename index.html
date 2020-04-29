@@ -10,7 +10,7 @@
 
 	<script>
 (async () => {
-	const socket = io(location.origin + location.pathname);
+	const socket = io(location.origin, { path: location.pathname });
 
 	const peer = new Peer(null, {
 		debug: 1
