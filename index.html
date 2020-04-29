@@ -92,11 +92,6 @@
 		peer.on('call', async call => {
 			console.log('incoming call...');
 
-			if(connected.has(id) === true) {
-				return;
-			}
-
-			connected.add(id);
 
 			console.log('answering');
 			call.answer(await localStream());
