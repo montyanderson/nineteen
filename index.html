@@ -23,6 +23,8 @@
 			this.$el = document.createElement("video");
 			this.$el.srcObject = stream;
 
+			this.$el.width = 500;
+
 			document.querySelector('body').appendChild(this.$el);
 			this.$el.play();
 		}
