@@ -20,7 +20,7 @@ io.on('connection', function(socket) {
 
 		socket.on('disconnect', () => {
 			console.log('leave', { id, peers });
-			peers.splice(peers.indexOf(id), 1);
+			peers.splice(peers.findIndex(p => p.id === id), 1);
 		});
 	});
 });

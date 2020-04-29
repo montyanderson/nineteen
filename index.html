@@ -9,16 +9,15 @@
 	<script src="https://unpkg.com/peerjs@1.0.0/dist/peerjs.min.js"></script>
 
 	<script>
+(async () => {
 	const socket = io(location.origin + location.pathname);
 
-
-	const getId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-	const id = getId();
-	const peer = new Peer(id);
+	const peer = new Peer(null, {
+		debug: 1
+	});
 
 	function handleStream(stream) {
 		console.log('handleStream', stream);
-
 
 		$video.play();
 	}
@@ -26,10 +25,6 @@
 	class VideoStream {
 		constructor(stream) {
 			this.$el = document.createElement("video");
-
-			this.$el.width = 500;
-			this.$el.height = 500;
-
 			this.$el.srcObject = stream;
 
 			document.querySelector('body').appendChild(this.$el);
@@ -41,48 +36,61 @@
 		}
 	}
 
-	var getUserMedia = (...args) => navigator.getUserMedia(...args);
+	const localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: false})
+	new VideoStream(localStream);
 
-	getUserMedia({video: true, audio: false }, stream => {
-		new VideoStream(stream);
-	}, () => {});
+	peer.on('open', async id => {
+		socket.emit('id', id);
 
+		socket.on('peers', async peers => {
+			console.log({ peers });
 
-	console.log('joining', { id });
+			for(const { id } of peers) {
+				console.log('calling', { id });
+				const call = peer.call(id, localStream);
+				console.log('post call');
 
-	socket.emit('id', id);
+				window.call = call;
 
-	socket.on('peers', peers => {
-		console.log({ peers });
-
-		for(const { id } of peers) {
-			getUserMedia({video: true, audio: true}, stream => {
-				const call = peer.call(id, stream);
+				call.on('error', err => console.log(err));
 
 				call.on('stream', stream => {
+					console.log('stream');
 					const video = new VideoStream(stream);
 
 					call.on('end', () => {
+						console.log('end');
 						video.end();
 					});
+
+					call.on('error', err => console.log('err', err));
 				});
-			}, err => console.log(err));
-		}
-	});
+			}
+		});
 
+		peer.on('call', async call => {
+			console.log('incoming call...');
 
-	peer.on('call', function(call) {
-		console.log('incoming call...');
+			const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
 
-		getUserMedia({video: true, audio: true}, function(stream) {
-			console.log('getUserMedia complete');
-			call.on('stream', handleStream);
+			console.log('answering');
 			call.answer(stream);
 
-		}, function(err) {
-			console.log('Failed to get local stream', err);
+			console.log('getUserMedia complete');
+			call.once('stream', stream => {
+				console.log('stream');
+				const video = new VideoStream(stream);
+
+				call.on('end', () => {
+					console.log('end');
+					video.end();
+				});
+
+				call.on('error', err => console.log('err', err));
+			});
 		});
 	});
+})();
 	</script>
 
 </body>
