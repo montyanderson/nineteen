@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<head>
+	<title>birthday</title>
+
+</head>
+<body>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://unpkg.com/peerjs@1.0.0/dist/peerjs.min.js"></script>
+
+	<script>
+	const socket = io(location.origin);
+
+
+	const getId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+	const id = getId();
+	const peer = new Peer(id);
+
+	function handleStream(stream) {
+		console.log('handleStream', stream);
+
+
+		$video.play();
+	}
+
+	class VideoStream {
+		constructor(stream) {
+			this.$el = document.createElement("video");
+
+			this.$el.width = 500;
+			this.$el.height = 500;
+
+			this.$el.srcObject = stream;
+
+			document.querySelector('body').appendChild(this.$el);
+			this.$el.play();
+		}
+
+		end() {
+			document.body.removeChild(this.$el);
+		}
+	}
+
+	var getUserMedia = (...args) => navigator.getUserMedia(...args);
+
+	getUserMedia({video: true, audio: false }, stream => {
+		new VideoStream(stream);
+	}, () => {});
+
+
+	console.log('joining', { id });
+
+	socket.emit('id', id);
+
+	socket.on('peers', peers => {
+		console.log({ peers });
+
+		for(const { id } of peers) {
+			getUserMedia({video: true, audio: true}, stream => {
+				const call = peer.call(id, stream);
+
+				call.on('stream', stream => {
+					const video = new VideoStream(stream);
+
+					call.on('end', () => {
+						video.end();
+					});
+				});
+			}, err => console.log(err));
+		}
+	});
+
+
+	peer.on('call', function(call) {
+		console.log('incoming call...');
+
+		getUserMedia({video: true, audio: true}, function(stream) {
+			console.log('getUserMedia complete');
+			call.on('stream', handleStream);
+			call.answer(stream);
+
+		}, function(err) {
+			console.log('Failed to get local stream', err);
+		});
+	});
+	</script>
+
+</body>
