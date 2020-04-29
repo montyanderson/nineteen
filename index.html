@@ -12,10 +12,6 @@
 (async () => {
 	const socket = io(location.origin);
 
-	const peer = new Peer(null, {
-		debug: 1
-	});
-
 	function handleStream(stream) {
 		console.log('handleStream', stream);
 
@@ -38,6 +34,10 @@
 
 	const localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: false})
 	new VideoStream(localStream);
+
+	const peer = new Peer(null, {
+		debug: 1
+	});
 
 	peer.on('open', async id => {
 		console.log('peer open');
