@@ -75,7 +75,7 @@
 
 				connected.add(id);
 
-				call.on('stream', stream => {
+				call.once('stream', stream => {
 					console.log('stream');
 					const video = new VideoStream(stream);
 
