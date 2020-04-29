@@ -32,8 +32,8 @@
 		}
 	}
 
-	const localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: false})
-	new VideoStream(localStream);
+	const localStream = async () => await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+	new VideoStream(await navigator.mediaDevices.getUserMedia({video: true, audio: false}));
 
 	const peer = new Peer(null, {
 		debug: 5
@@ -41,21 +41,39 @@
 
 	window.peer = peer;
 
+	let a = false;
+
+	const connected = new Set();
+
 	peer.on('open', async id => {
+		if(a === true) {
+			return;
+		}
+
+		a = true;
+
 		console.log('peer open');
 		socket.emit('id', id);
+
 
 		socket.on('peers', async peers => {
 			console.log({ peers });
 
 			for(const { id } of peers) {
+
 				console.log('calling', { id });
-				const call = peer.call(id, localStream);
+				const call = peer.call(id, await localStream());
 				console.log('post call');
 
 				window.call = call;
 
 				call.on('error', err => console.log(err));
+
+				if(connected.has(id) === true) {
+					return;
+				}
+
+				connected.add(id);
 
 				call.on('stream', stream => {
 					console.log('stream');
@@ -74,10 +92,14 @@
 		peer.on('call', async call => {
 			console.log('incoming call...');
 
-			const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+			if(connected.has(id) === true) {
+				return;
+			}
+
+			connected.add(id);
 
 			console.log('answering');
-			call.answer(stream);
+			call.answer(await localStream());
 
 			console.log('getUserMedia complete');
 			call.once('stream', stream => {
@@ -93,6 +115,7 @@
 			});
 		});
 	});
+
 })();
 	</script>
 
