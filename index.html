@@ -36,8 +36,10 @@
 	new VideoStream(localStream);
 
 	const peer = new Peer(null, {
-		debug: 1
+		debug: 5
 	});
+
+	window.peer = peer;
 
 	peer.on('open', async id => {
 		console.log('peer open');
